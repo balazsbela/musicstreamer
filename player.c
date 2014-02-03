@@ -68,6 +68,7 @@ void playSong(char** v) {
   while(keepPlaying) {    
       pthread_mutex_lock(&mtx);
 	      
+      // TODO: Use pthread_cond_wait
       if (strcmp(nextOp, "play") != 0) {      
 	  pthread_mutex_unlock(&mtx);
 	  continue;
