@@ -63,11 +63,7 @@ void playSong(char** v) {
      
   //FMOD_System_SetFileSystem(fmodsystem, 0, 0, 0, 0, 0, 0, 1);
   
-  //Free the previous buffer;
-  //free((void *)playBuffer);
-  //const char* playBuffer = malloc(BUFFER_SIZE);
-  //memcpy((void*)playBuffer, (void*)buffer, BUFFER_SIZE);   
-
+  
   while(keepPlaying) {    
       pthread_mutex_lock(&mtx);
 	      
@@ -75,17 +71,19 @@ void playSong(char** v) {
 	  pthread_mutex_unlock(&mtx);
 	  continue;
       }       
-      
+  
+      //Free the previous buffer;
+//      free((void *)playBuffer);
+//      const char* playBuffer = malloc(BUFFER_SIZE);
+//      memcpy((void*)playBuffer, (void*)buffer, BUFFER_SIZE);   
+
+  
       FMOD_CREATESOUNDEXINFO info;
       memset(&info, 0, sizeof(info));
       info.length = BUFFER_SIZE;
       info.cbsize = sizeof(info);
 	
-      result = FMOD_System_CreateSound(fmodsystem, (const char*) buffer, FMOD_OPENMEMORY | FMOD_HARDWARE, &info, &sound1);
-      ERRCHECK(result);
-	
-      unsigned int lenms = 0;
-      result = FMOD_Sound_GetLength(sound1, &lenms, FMOD_TIMEUNIT_MS);
+      result = FMOD_System_CreateSound(fmodsystem, (const char*) buffer, FMOD_OPENMEMORY, &info, &sound1);
       ERRCHECK(result);
 
       result = FMOD_Sound_SetMode(sound1, FMOD_LOOP_OFF);
@@ -95,16 +93,21 @@ void playSong(char** v) {
       ERRCHECK(result);          
 	  
       FMOD_System_Update(fmodsystem);      
-	  
+	        	
+      unsigned int lenms = 0;
+      result = FMOD_Sound_GetLength(sound1, &lenms, FMOD_TIMEUNIT_MS);
+      ERRCHECK(result);
+      
       unsigned int ms = 0;
       int startedReading = 0;
       while (ms < lenms) {
 	  result = FMOD_Channel_GetPosition(channel, &ms, FMOD_TIMEUNIT_MS);
 	  ERRCHECK(result);           
+	  printf("%ul out of %ul \n", ms, lenms);
 	  if (!startedReading && ms > (lenms / 2)) {
+	      startedReading = 1;
 	      nextOp = "read";   
 	      pthread_mutex_unlock(&mtx);
-	      startedReading = 1;
 	  }                     
       }         
   } //keep playing   
