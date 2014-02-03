@@ -17,7 +17,7 @@
 #include "fmodex/fmod_output.h"
 #include "fmodex/fmod_codec.h"
 
-#define BUFFER_SIZE 10*1024*1024
+#define BUFFER_SIZE 5*1024*1024
 #define CORRECTION_TWEAK_MS 50
 
 FMOD_SYSTEM *fmodsystem = 0;
