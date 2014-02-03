@@ -22,7 +22,7 @@
 #define PORT 1571
 #define HOST_ADDR "127.0.0.1"
 #define BUFFER_SIZE 64*1024
-
+#define MUSIC_DIR "Music"
 
 struct param {
    int sock;
@@ -47,13 +47,24 @@ void handleClient(param* p) {
    song = malloc(size+1);
    safeRecv(p->sock, song, size+1, 0);
    
-   printf("Requested song:%s \n", song);
+   printf("Requested song:%s \n", song);    
+   char* fullSongPath = NULL;   
+   findFile(song, MUSIC_DIR, &fullSongPath);
+   if (fullSongPath == NULL) {
+       printf("Could not find song!\n");
+       close(p->sock);
+       return;
+   }
+   
+   printf("Playing song:%s\n", fullSongPath);
+   fflush(stdout);
    
    int fd = 0;
-   if ((fd = open(song, O_RDONLY)) > 0) {
+   if ((fd = open(fullSongPath, O_RDONLY)) > 0) {
       free(song);
-      struct stat buf;          
+      free(fullSongPath);
 
+      struct stat buf;          
       fstat(fd, &buf);
       off_t size = htonl(buf.st_size);
       
@@ -104,6 +115,16 @@ void closeServer() {
 }
 
 int main() {
+  
+   struct stat buf;          
+   if (stat(MUSIC_DIR, &buf) < 0) {
+       perror("Could not stat music directory:");
+   }       
+   
+   if (!S_ISDIR(buf.st_mode)) {
+     printf("Music directory invalid: %s:\n", MUSIC_DIR);
+     return 1;
+   }   
    
    int sock;
    unsigned int len;
@@ -113,7 +134,12 @@ int main() {
    signal(SIGINT, closeServer);
    
    tcpSocket = socket(AF_INET, SOCK_STREAM, 0);
-     
+    
+   int yes = 1;
+   if (setsockopt(tcpSocket, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) == -1 ) {
+      perror("setsockopt");
+   }
+   
    addr.sin_family = AF_INET;
    addr.sin_port = htons(PORT);
    addr.sin_addr.s_addr = inet_addr(HOST_ADDR);
